@@ -1,7 +1,6 @@
 '''
 some doc will be here
 '''
-from genericpath import isfile
 import subprocess
 from socket import socket
 from threading import Thread
@@ -138,7 +137,10 @@ def pingtest(session_id, sock):
         sleep(30)
 
 if __name__ == '__main__':
-
+                                 
+    print('''\n\t._ _    _.  ._   _|_  o   _ \n\t| | |  (_|  | |   |_  |  _> \n\n''')
+ 
+ 
     while True:       
         opts = input(prompt).split(' ')
         if len(opts)>0:
